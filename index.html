@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/tewetech/pdftopng/refs/heads/main/favicon-pdftopng.png">    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Konverter PDF ke PNG HD</title>
@@ -37,13 +38,18 @@
             --glass-br: 12px; 
             /* Bayangan ringan */
             --shadow-light: rgba(0, 0, 0, 0.1); 
+            /* Warna border untuk Drag & Drop aktif */
+            --drag-drop-border: #08978b; 
+            /* Warna untuk garis grid tipis */
+            --grid-color: rgba(0, 0, 0, 0.05); 
         }
 
         /* Styling dasar untuk body */
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
-            padding: 20px;
+            /* Padding 0 agar container dapat di-center dengan sempurna */
+            padding: 0; 
             /* Memastikan body menempati seluruh tinggi viewport */
             height: 100vh; 
             /* Mengatur tata letak untuk menempatkan konten di tengah */
@@ -56,29 +62,49 @@
             position: relative;
             /* Mencegah scrolling horizontal yang tidak perlu */
             overflow-x: hidden; 
-            /* Menyederhanakan, memastikan tidak ada scroll vertikal jika konten muat */
+            /* MENCEGAH SCROLL VERTIKAL (sesuai permintaan "tanpa perlu di scroll") */
             overflow-y: hidden;
             text-align: center;
-        }
-
-        /* Menghapus semua efek latar belakang (body::before dan body::after) untuk tampilan yang lebih simpel */
-        body::before, body::after {
-            content: none;
-        }
-        
-        /* Memberikan latar belakang solid atau gradien yang lebih sederhana */
-        body {
+            /* Latar belakang gradien sederhana */
             background: linear-gradient(135deg, #e0e0e5 0%, #f0f0f5 100%);
         }
 
         /* ==================================== */
-        /* CONTAINER UTAMA (Efek Glassmorphism Disederhanakan) */
+        /* EFEK LATAR BELAKANG GRID TIPIS */
+        /* ==================================== */
+
+        body::before {
+            content: '';
+            position: fixed; /* Tetap di viewport */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Di bawah konten utama */
+            /* Membuat pola grid menggunakan linear-gradient yang diulang */
+            background-image: 
+                linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+            /* Ukuran setiap kotak grid (40x40 piksel) */
+            background-size: 40px 40px; 
+            /* Mengatur opacity agar grid sangat tipis */
+            opacity: 1; 
+            pointer-events: none; /* Agar tidak menghalangi interaksi */
+        }
+        
+        /* Menghapus after yang tidak terpakai */
+        body::after {
+            content: none;
+        }
+
+        /* ==================================== */
+        /* CONTAINER UTAMA (Glassmorphism) */
         /* ==================================== */
 
         .container {
-            max-width: 600px; /* Lebar container dikurangi agar lebih simpel */
+            max-width: 600px; 
             width: 90%;
-            margin: auto; /* Menggunakan margin: auto agar tetap di tengah */
+            margin: auto; 
             padding: 30px;
             /* Efek glassmorphism */
             background: var(--bg-card);
@@ -87,26 +113,29 @@
             border-radius: var(--glass-br);
             border: 1px solid var(--border-color);
             box-shadow: 0 8px 20px var(--shadow-light);
-            z-index: 1; 
+            z-index: 1; /* Di atas grid */
             text-align: center;
-            /* Menghapus transisi dan efek hover pergerakan */
-            transition: none;
-            transform: none;
+            transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s; 
+            
+            /* Pembatasan tinggi agar konten muat di dalam viewport */
+            max-height: 95vh; 
+            overflow-y: auto; /* Scroll internal jika konten container terlalu padat */
         }
         
-        /* Menghapus efek hover pergerakan */
-        .container:hover {
-            transform: none; 
-            box-shadow: 0 8px 20px var(--shadow-light); /* Menjaga bayangan tetap sama */
+        /* Gaya saat file di-drag di atas container */
+        .container.drag-over {
+            border: 2px dashed var(--drag-drop-border);
+            box-shadow: 0 0 30px rgba(8, 151, 139, 0.5);
+            background-color: rgba(8, 151, 139, 0.15); 
         }
 
         /* Styling Judul */
         h1 {
             color: var(--accent-1); 
             margin-bottom: 20px;
-            font-size: 2em; /* Ukuran font sedikit dikurangi */
+            font-size: 2em; 
             font-weight: 700;
-            text-shadow: 0 0 10px rgba(8, 151, 139, 0.3); /* Bayangan teks lebih halus */
+            text-shadow: 0 0 10px rgba(8, 151, 139, 0.3); 
         }
 
         /* Styling Paragraf */
@@ -115,15 +144,19 @@
             margin-bottom: 20px;
         }
         
-        /* Bagian Input */
+        /* Bagian Input (Untuk menampung tombol Pilih dan Konversi) */
         .input-section {
             display: flex;
-            flex-direction: column;
+            /* Mengatur tombol sejajar horizontal */
+            flex-direction: row; 
+            /* Tombol berada di tengah */
+            justify-content: center; 
             align-items: center;
-            gap: 15px; /* Jarak antar elemen dikurangi */
-            margin-bottom: 10px;
+            /* Jarak antar elemen flex */
+            gap: 15px; 
+            margin-bottom: 15px; /* Jarak dengan tampilan nama file di bawah */
         }
-
+        
         /* Menyembunyikan tampilan input file bawaan */
         input[type="file"] {
             display: none;
@@ -134,8 +167,9 @@
             position: relative;
             overflow: hidden;
             display: inline-block;
-            width: 100%;
-            max-width: 350px; /* Lebar maksimum dikurangi */
+            /* Agar tombol terlihat proporsional saat sejajar */
+            flex: 1; 
+            min-width: 150px;
         }
 
         /* ==================================== */
@@ -144,7 +178,7 @@
 
         .file-upload-label {
             border: 2px solid var(--accent-1);
-            padding: 10px 20px; /* Padding sedikit dikurangi */
+            padding: 10px 20px; 
             border-radius: 8px;
             cursor: pointer;
             background-color: var(--accent-1);
@@ -159,25 +193,28 @@
         .file-upload-label:hover {
             background-color: var(--accent-2); 
             border-color: var(--accent-2);
-            /* Menghilangkan efek transform: translateY(-2px); */
             box-shadow: 0 4px 10px rgba(255, 105, 50, 0.4);
         }
 
         /* ==================================== */
-        /* TAMPILAN NAMA FILE */
+        /* TAMPILAN NAMA FILE (REVISI LEBAR & TINGGI) */
         /* ==================================== */
 
         #file-name-display {
-            margin-top: 5px;
-            padding: 8px; /* Padding dikurangi */
+            margin: 5px auto 15px auto; /* Di bawah tombol, dengan margin bawah lebih besar */
+            /* REVISI: Menggunakan lebar 100% dari container parent agar sama dengan .status */
+            width: 100%; 
+            /* REVISI: Menghapus max-width agar lebar mengikuti container */
+            max-width: none; 
+            
+            padding: 12px; /* REVISI: Menyesuaikan padding agar tinggi seimbang dengan .status */
+            
             background-color: rgba(8, 151, 139, 0.1); 
             border: 1px solid var(--accent-1);
-            border-radius: 6px;
-            text-align: left;
+            border-radius: 8px; /* REVISI: Menyesuaikan radius agar seragam dengan .status */
+            text-align: center; 
             font-style: italic;
             color: var(--text-main);
-            max-width: 350px;
-            width: 100%;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.85rem;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -185,6 +222,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            /* Memastikan padding dan border dihitung dalam lebar total */
+            box-sizing: border-box; 
         }
         
         /* ==================================== */
@@ -192,7 +231,7 @@
         /* ==================================== */
 
         #convert-btn {
-            padding: 12px 30px; /* Padding dikurangi */
+            padding: 12px 30px; 
             background-color: var(--accent-2); 
             color: white;
             border: none;
@@ -200,35 +239,52 @@
             cursor: pointer;
             font-size: 1.1em;
             font-weight: 700;
-            transition: background-color 0.3s, box-shadow 0.3s;
+            transition: background-color 0.3s, box-shadow 0.3s, transform 0.1s;
             box-shadow: 0 4px 10px rgba(255, 105, 50, 0.5);
-            margin-top: 10px;
+            margin-top: 0; 
+            /* Mengatur proporsionalitas sejajar dengan tombol pilih */
+            flex: 1; 
+            min-width: 150px;
         }
 
         #convert-btn:hover {
             background-color: #e55c28; /* Sedikit lebih gelap dari aksen 2 */
-            /* Menghilangkan efek transform: translateY(-3px); */
             box-shadow: 0 6px 15px rgba(255, 105, 50, 0.7);
+            transform: translateY(-1px); /* Efek tekan ringan */
+        }
+        
+        #convert-btn:active {
+            transform: translateY(0); /* Efek tombol tertekan */
         }
 
         #convert-btn:disabled {
             background-color: var(--text-subtle);
             box-shadow: none;
             cursor: not-allowed;
-            transform: none; /* Memastikan tidak ada efek transform */
+            transform: none; 
         }
         
         /* ==================================== */
-        /* STATUS PESAN & CATATAN */
+        /* STATUS PESAN & CATATAN (REVISI LEBAR & TINGGI) */
         /* ==================================== */
 
         .status {
-            margin-top: 20px;
+            margin-top: 10px; 
             font-size: 0.95em;
-            padding: 12px; /* Padding dikurangi */
+            /* REVISI: Menyesuaikan padding agar tinggi seimbang dengan #file-name-display */
+            padding: 12px; 
             border-radius: 8px;
             background-color: rgba(0, 0, 0, 0.05);
+            /* REVISI: Mengatur lebar 100% dan box-sizing agar lebar sama dengan #file-name-display */
+            width: 100%; 
+            box-sizing: border-box;
         }
+        
+        /* Inner paragraph di dalam .status */
+        .status p {
+            margin: 0; /* Menghilangkan margin bawaan p agar tinggi tetap stabil */
+        }
+
 
         #status-message {
             color: var(--text-main);
@@ -243,7 +299,7 @@
         
         /* Gaya catatan kecil */
         .note {
-            margin-top: 15px; /* Margin dikurangi */
+            margin-top: 15px; 
             font-size: 0.8rem;
             color: var(--text-subtle);
         }
@@ -251,11 +307,6 @@
         /* Menyembunyikan canvas yang digunakan untuk rendering */
         canvas {
             display: none;
-        }
-        
-        /* Menghapus semua animasi latar belakang */
-        @keyframes pulseBg {
-            from, to { transform: none; }
         }
         
         /* Media Queries untuk responsivitas */
@@ -269,39 +320,62 @@
             p {
                 font-size: 0.9em;
             }
+            /* Di layar kecil, tombol kembali ditumpuk vertikal */
+            .input-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .file-upload-wrapper, #convert-btn {
+                width: 100%;
+                max-width: 100%;
+                min-width: auto;
+            }
             #convert-btn {
                 font-size: 1em;
                 padding: 10px 25px;
+            }
+            /* REVISI: Memastikan lebar 100% tetap berlaku di mobile */
+            #file-name-display, .status {
+                width: 100%;
+                max-width: none;
             }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" id="drop-area">
         <h1>Konverter PDF ke PNG HD</h1>
-        <p>Pilih file PDF Bisa banyak sekaligus.</p>
+        <p>Pilih file PDF, Atau Seret & Lepas Disini. Bisa Banyak Sekaligus.</p>
 
-        <div class="input-section">
-            <div class="file-upload-wrapper">
-                <input type="file" id="pdf-file" accept="application/pdf" multiple>
-                <label for="pdf-file" class="file-upload-label"><i class="fas fa-file-pdf"></i> Pilih File PDF</label>
+        <div class="main-action-section">
+            <div class="input-section">
+                <div class="file-upload-wrapper">
+                    <input type="file" id="pdf-file" accept="application/pdf" multiple>
+                    <label for="pdf-file" class="file-upload-label"><i class="fas fa-file-pdf"></i> Pilih File PDF</label>
+                </div>
+                
+                <button id="convert-btn" disabled><i class="fa-solid fa-image"></i> Konversi</button>
             </div>
+            
             <div id="file-name-display">Belum ada file yang dipilih.</div>
-            <button id="convert-btn" disabled><i class="fa-solid fa-image"></i> Proses</button>
         </div>
 
         <div class="status">
-            <p id="status-message">Silakan pilih file PDF.</p>
+            <p id="status-message">Status pengerjaan akan muncul disini.</p>
         </div>
 
         <p class="note">
-            <small>Konversi dilakukan sepenuhnya di browser Anda, menghasilkan gambar PNG yang dikemas dalam ZIP.</small>
+            <small>Copyright © 2025 | Tewe Tech | 0823-2362-4177.</small>
         </p>
     </div>
 
     <script>
-        // Mengatur path worker untuk PDF.js
+        // ====================================
+        // PENGATURAN DAN VARIABEL JAVASCRIPT
+        // ====================================
+
+        // Mengatur path worker untuk PDF.js (penting untuk rendering)
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js';
 
         // Mendapatkan elemen-elemen DOM
@@ -309,140 +383,39 @@
         const convertBtn = document.getElementById('convert-btn');
         const statusMessage = document.getElementById('status-message');
         const fileNameDisplay = document.getElementById('file-name-display');
-
-        // --- Event Listener ---
+        const dropArea = document.getElementById('drop-area'); // Elemen untuk fitur Drag & Drop
         
-        // Listener saat file PDF dipilih
-        pdfFileInput.addEventListener('change', (event) => {
-            const files = event.target.files;
-            
-            // Memeriksa jumlah file yang dipilih
-            if (files.length > 0) {
-                // Mendapatkan nama-nama file yang dipilih untuk ditampilkan
-                const fileNames = Array.from(files).map(file => file.name).join(', ');
-                
-                // Jika banyak file, tampilkan ringkasan
-                if (files.length > 1) {
-                    fileNameDisplay.textContent = `${files.length} file dipilih.`;
+        // Variabel untuk menyimpan daftar file PDF yang siap diproses
+        let filesToProcess = [];
+
+        // --- Fungsi Pembantu (Helper Function) ---
+        
+        /**
+         * Memperbarui status tampilan file yang dipilih (baik dari input maupun drop).
+         * @param {FileList|File[]} files - Daftar file yang akan diproses.
+         */
+        function updateFileStatus(files) {
+            // Filter hanya file PDF
+            filesToProcess = Array.from(files).filter(file => file.type === 'application/pdf');
+
+            if (filesToProcess.length > 0) {
+                // Menampilkan nama file atau jumlah file yang dipilih
+                if (filesToProcess.length > 1) {
+                    fileNameDisplay.textContent = `${filesToProcess.length} file PDF dipilih.`;
                 } else {
-                    // Jika hanya satu file, tampilkan nama file tersebut
-                    fileNameDisplay.textContent = `1 file: ${files[0].name}`;
+                    fileNameDisplay.textContent = `1 file: ${filesToProcess[0].name}`;
                 }
 
-                statusMessage.textContent = `${files.length} file PDF siap dikonversi.`;
+                statusMessage.textContent = `${filesToProcess.length} file PDF siap dikonversi.`;
                 statusMessage.classList.remove('error'); 
                 convertBtn.disabled = false; // Mengaktifkan tombol konversi
             } else {
-                // Jika tidak ada file yang dipilih
                 fileNameDisplay.textContent = 'Belum ada file yang dipilih.';
-                statusMessage.textContent = 'Silakan pilih file PDF.';
+                statusMessage.textContent = 'Silakan pilih atau seret file PDF.';
                 statusMessage.classList.remove('error');
                 convertBtn.disabled = true; // Menonaktifkan tombol
             }
-        });
-
-        // Listener saat tombol konversi diklik
-        convertBtn.addEventListener('click', async () => {
-            const files = pdfFileInput.files;
-            if (files.length === 0) {
-                statusMessage.textContent = '❌ ERROR: Tidak ada file PDF yang dipilih.';
-                statusMessage.classList.add('error');
-                return;
-            }
-
-            // Menonaktifkan tombol saat proses dimulai
-            convertBtn.disabled = true;
-            statusMessage.textContent = `Memulai konversi untuk ${files.length} file...`;
-            statusMessage.classList.remove('error');
-
-            // Proses setiap file PDF
-            for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
-                const file = files[fileIndex];
-                const fileNumber = fileIndex + 1;
-                
-                // Mendapatkan nama dasar file (tanpa ekstensi .pdf)
-                const fileNameBase = file.name.replace(/\.pdf$/i, '');
-                
-                statusMessage.textContent = `[${fileNumber}/${files.length}] Memuat PDF: ${file.name}...`;
-
-                try {
-                    // 1. Membaca file sebagai ArrayBuffer
-                    const arrayBuffer = await readFileAsArrayBuffer(file);
-                    
-                    // 2. Membuat instance JSZip baru untuk file ini
-                    const zip = new JSZip(); 
-
-                    // 3. Mendapatkan dokumen PDF dari ArrayBuffer
-                    const pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                    const numPages = pdfDocument.numPages;
-
-                    statusMessage.textContent = `[${fileNumber}/${files.length}] Ditemukan ${numPages} halaman. Memulai rendering...`;
-                    
-                    // 4. Loop melalui setiap halaman
-                    for (let i = 1; i <= numPages; i++) {
-                        statusMessage.textContent = `[${fileNumber}/${files.length}] Mengkonversi Halaman ${i} dari ${numPages}...`;
-                        
-                        const page = await pdfDocument.getPage(i);
-                        
-                        // Menghitung viewport dengan skala tinggi untuk kualitas HD
-                        const scale = 3.0; // Skala 3.0 = resolusi 3x dari default
-                        const viewport = page.getViewport({ scale: scale });
-
-                        // Membuat elemen canvas baru (tidak perlu ditambahkan ke DOM)
-                        const canvas = document.createElement('canvas');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        const context = canvas.getContext('2d');
-
-                        const renderContext = {
-                            canvasContext: context,
-                            viewport: viewport
-                        };
-
-                        // Merender halaman ke canvas
-                        await page.render(renderContext).promise;
-
-                        // Mengubah konten canvas menjadi Blob (format PNG untuk lossless)
-                        const imageBlob = await new Promise(resolve => {
-                            canvas.toBlob(resolve, 'image/png'); 
-                        });
-                        
-                        // Nama file di dalam ZIP
-                        const imageName = `${fileNameBase}_page_${i}.png`; 
-                        
-                        // Menambahkan Blob gambar ke dalam objek ZIP
-                        zip.file(imageName, imageBlob); 
-                        
-                        // Membersihkan referensi canvas
-                        canvas.remove();
-                    }
-                    
-                    // 5. Menghasilkan file ZIP
-                    statusMessage.textContent = `[${fileNumber}/${files.length}] Membuat file ZIP...`;
-                    const zipBlob = await zip.generateAsync({ type: "blob" });
-
-                    // 6. Memicu unduhan file ZIP
-                    const zipFilename = `${fileNameBase}.zip`;
-                    saveAs(zipBlob, zipFilename); // Menggunakan library FileSaver.js
-
-                    // Jeda sebentar sebelum memproses file berikutnya
-                    await new Promise(resolve => setTimeout(resolve, 1000)); 
-
-                } catch (error) {
-                    console.error("Kesalahan Konversi:", error);
-                    statusMessage.textContent = `❌ ERROR pada file ${file.name}: Terjadi kesalahan saat memproses PDF: ${error.message}`;
-                    statusMessage.classList.add('error');
-                    // Lanjut ke file berikutnya jika terjadi error
-                }
-            }
-            
-            // Proses selesai untuk semua file
-            statusMessage.textContent = `Selesai! ${files.length} file PDF telah dikonversi dan diunduh dalam bentuk ZIP.`;
-            statusMessage.classList.remove('error');
-            convertBtn.disabled = false;
-        });
-
-        // --- Fungsi Pembantu (Helper Function) ---
+        }
 
         /**
          * Membaca objek File sebagai ArrayBuffer.
@@ -458,6 +431,164 @@
                 fileReader.readAsArrayBuffer(file);
             });
         }
+        
+        // --- Event Listeners Drag & Drop ---
+        
+        // Mencegah perilaku default (membuka file) saat file di-drag di atas area
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false); // Pencegahan global
+        });
+        
+        /** Mencegah default browser, agar fitur drop file bisa bekerja */
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Menambahkan gaya visual saat file di-drag ke dalam area
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over'), false);
+        });
+
+        // Menghapus gaya visual saat file keluar dari area
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over'), false);
+        });
+
+        // Event saat file di-drop
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        /**
+         * Memproses file yang di-drop ke area.
+         * @param {Event} e - Objek event drop.
+         */
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files; // FileList dari operasi drop
+            
+            // Memproses files dari drop dan memperbarui status
+            updateFileStatus(files);
+        }
+
+        // --- Event Listener Input File Biasa ---
+        
+        // Listener saat file PDF dipilih melalui tombol input
+        pdfFileInput.addEventListener('change', (event) => {
+            // Memperbarui status file yang dipilih
+            updateFileStatus(event.target.files);
+        });
+
+        // --- Event Listener Konversi (Logika Utama) ---
+
+        // Listener saat tombol konversi diklik
+        convertBtn.addEventListener('click', async () => {
+            const files = filesToProcess; // Menggunakan filesToProcess dari input atau drop
+
+            if (files.length === 0) {
+                statusMessage.textContent = '❌ ERROR: Tidak ada file PDF yang dipilih.';
+                statusMessage.classList.add('error');
+                return;
+            }
+
+            // Menonaktifkan tombol saat proses dimulai
+            convertBtn.disabled = true;
+            statusMessage.textContent = `Memulai konversi untuk ${files.length} file...`;
+            statusMessage.classList.remove('error');
+
+            // Proses setiap file PDF satu per satu
+            for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+                const file = files[fileIndex];
+                const fileNumber = fileIndex + 1;
+                
+                // Mendapatkan nama dasar file (tanpa ekstensi .pdf)
+                const fileNameBase = file.name.replace(/\.pdf$/i, '');
+                
+                statusMessage.textContent = `[${fileNumber}/${files.length}] Memuat PDF: ${file.name}...`;
+
+                try {
+                    // 1. Membaca file sebagai ArrayBuffer
+                    const arrayBuffer = await readFileAsArrayBuffer(file);
+                    
+                    // 2. Membuat instance JSZip baru untuk file ini (agar hasilnya dalam ZIP)
+                    const zip = new JSZip(); 
+
+                    // 3. Mendapatkan dokumen PDF dari ArrayBuffer
+                    const pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    const numPages = pdfDocument.numPages;
+
+                    statusMessage.textContent = `[${fileNumber}/${files.length}] Ditemukan ${numPages} halaman. Memulai rendering...`;
+                    
+                    // 4. Loop melalui setiap halaman
+                    for (let i = 1; i <= numPages; i++) {
+                        statusMessage.textContent = `[${fileNumber}/${files.length}] Mengkonversi Halaman ${i} dari ${numPages}...`;
+                        
+                        const page = await pdfDocument.getPage(i);
+                        
+                        // Menghitung viewport dengan skala tinggi untuk kualitas HD
+                        const scale = 3.0; // Skala 3.0 = resolusi 3x dari default (HD)
+                        const viewport = page.getViewport({ scale: scale });
+
+                        // Membuat elemen canvas baru
+                        const canvas = document.createElement('canvas');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        const context = canvas.getContext('2d');
+
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+
+                        // Merender halaman ke canvas
+                        await page.render(renderContext).promise;
+
+                        // Mengubah konten canvas menjadi Blob (format PNG untuk lossless)
+                        const imageBlob = await new Promise(resolve => {
+                            // toBlob adalah metode async yang didukung browser
+                            canvas.toBlob(resolve, 'image/png'); 
+                        });
+                        
+                        // Nama file gambar di dalam ZIP
+                        const imageName = `${fileNameBase}_page_${i}.png`; 
+                        
+                        // Menambahkan Blob gambar ke dalam objek ZIP
+                        zip.file(imageName, imageBlob); 
+                        
+                        // Membersihkan referensi canvas (Penting untuk memori)
+                        canvas.remove();
+                    }
+                    
+                    // 5. Menghasilkan file ZIP
+                    statusMessage.textContent = `[${fileNumber}/${files.length}] Membuat file ZIP...`;
+                    const zipBlob = await zip.generateAsync({ type: "blob" });
+
+                    // 6. Memicu unduhan file ZIP
+                    const zipFilename = `${fileNameBase}.zip`;
+                    saveAs(zipBlob, zipFilename); // Menggunakan library FileSaver.js
+
+                    // Jeda sebentar sebelum memproses file berikutnya untuk stabilitas unduhan
+                    await new Promise(resolve => setTimeout(resolve, 1000)); 
+
+                } catch (error) {
+                    // Menangani kesalahan konversi per file
+                    console.error("Kesalahan Konversi:", error);
+                    statusMessage.textContent = `❌ ERROR pada file ${file.name}: Terjadi kesalahan saat memproses PDF: ${error.message}`;
+                    statusMessage.classList.add('error');
+                    // Lanjut ke file berikutnya jika terjadi error
+                }
+            }
+            
+            // Proses selesai untuk semua file
+            statusMessage.textContent = `Selesai! ${files.length} file PDF telah dikonversi dan diunduh dalam bentuk ZIP.`;
+            statusMessage.classList.remove('error');
+            convertBtn.disabled = false; // Mengaktifkan tombol lagi
+            
+            // Reset status file yang dipilih setelah proses selesai
+            filesToProcess = [];
+            pdfFileInput.value = null; // Menghapus file dari input
+            fileNameDisplay.textContent = 'Belum ada file yang dipilih.';
+        });
     </script>
 </body>
 </html>
